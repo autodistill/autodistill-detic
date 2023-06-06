@@ -1,17 +1,14 @@
+import argparse
+import multiprocessing as mp
 import os
+import subprocess
+import sys
 from dataclasses import dataclass
 
 import numpy as np
 import supervision as sv
 import torch
-import subprocess
 from autodistill.detection import CaptionOntology, DetectionBaseModel
-
-import argparse
-import multiprocessing as mp
-import os
-import sys
-
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
@@ -19,9 +16,11 @@ from detectron2.utils.logger import setup_logger
 VOCAB = "custom"
 CONFIDENCE_THRESHOLD = 0.1
 
+
 def setup_cfg(args):
     from centernet.config import add_centernet_config
     from detic.config import add_detic_config
+
     cfg = get_cfg()
     cfg.MODEL.DEVICE = "cpu" if args.cpu else "cuda"
     add_centernet_config(cfg)
@@ -37,6 +36,7 @@ def setup_cfg(args):
         cfg.MODEL.ROI_HEADS.ONE_CLASS_PER_PROPOSAL = False
     cfg.freeze()
     return cfg
+
 
 def load_detic_model(ontology):
     mp.set_start_method("spawn", force=True)
@@ -67,6 +67,7 @@ def load_detic_model(ontology):
 
     return demo
 
+
 HOME = os.path.expanduser("~")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -82,8 +83,9 @@ installation_commands = [
     "cd Detic",
     "pip install -r requirements.txt",
     "mkdir models",
-    "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
+    "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth",
 ]
+
 
 def install_detic():
     for command in installation_commands:
@@ -124,6 +126,7 @@ class DETIC(DetectionBaseModel):
 
         predictions, visualized_output = self.detic_model.run_on_image(img)
         import cv2
+
         cv2.imshow("test", visualized_output.get_image()[:, :, ::-1])
         cv2.waitKey(0)
         exit()
@@ -135,10 +138,8 @@ class DETIC(DetectionBaseModel):
         final_pred_boxes = []
         final_pred_classes = []
         final_pred_scores = []
-        
+
         # get class labels
-
-
 
         print(predictions)
 
