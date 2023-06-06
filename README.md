@@ -52,7 +52,7 @@ base_model.label("./context_images", extension=".jpg")
 
 The code in this repository is licensed under an [MIT license](LICENSE).
 
-DETIC and its dependenciesa re 
+See the Meta Research DETIC repository for more information on the [DETIC license](https://github.com/facebookresearch/Detic).
 
 ## 🏆 Contributing
 
