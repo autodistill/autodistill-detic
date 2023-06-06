@@ -1,26 +1,27 @@
-import argparse
-import multiprocessing as mp
 import os
-import subprocess
-import sys
 from dataclasses import dataclass
 
 import numpy as np
 import supervision as sv
 import torch
+import subprocess
 from autodistill.detection import CaptionOntology, DetectionBaseModel
+
+import argparse
+import multiprocessing as mp
+import os
+import sys
+
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
 
 VOCAB = "custom"
-CONFIDENCE_THRESHOLD = 0.1
-
+CONFIDENCE_THRESHOLD = 0.3
 
 def setup_cfg(args):
     from centernet.config import add_centernet_config
     from detic.config import add_detic_config
-
     cfg = get_cfg()
     cfg.MODEL.DEVICE = "cpu" if args.cpu else "cuda"
     add_centernet_config(cfg)
@@ -37,11 +38,9 @@ def setup_cfg(args):
     cfg.freeze()
     return cfg
 
-
 def load_detic_model(ontology):
     mp.set_start_method("spawn", force=True)
     setup_logger(name="fvcore")
-    logger = setup_logger()
 
     args = argparse.Namespace()
 
@@ -55,10 +54,9 @@ def load_detic_model(ontology):
     args.output = None
     args.webcam = None
     args.video_input = None
-    print(ontology.prompts())
     args.custom_vocabulary = ", ".join(ontology.prompts()).rstrip(",")
     print(args.custom_vocabulary)
-    args.pred_all_class = True
+    args.pred_all_class = False
     cfg = setup_cfg(args)
 
     from detic.predictor import VisualizationDemo
@@ -66,7 +64,6 @@ def load_detic_model(ontology):
     demo = VisualizationDemo(cfg, args)
 
     return demo
-
 
 HOME = os.path.expanduser("~")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -83,9 +80,8 @@ installation_commands = [
     "cd Detic",
     "pip install -r requirements.txt",
     "mkdir models",
-    "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth",
+    "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
 ]
-
 
 def install_detic():
     for command in installation_commands:
@@ -125,11 +121,7 @@ class DETIC(DetectionBaseModel):
         img = read_image(input, format="BGR")
 
         predictions, visualized_output = self.detic_model.run_on_image(img)
-        import cv2
 
-        cv2.imshow("test", visualized_output.get_image()[:, :, ::-1])
-        cv2.waitKey(0)
-        exit()
         pred_boxes = predictions["instances"].pred_boxes.tensor.cpu().numpy()
         pred_classes = predictions["instances"].pred_classes.cpu().numpy()
         pred_scores = predictions["instances"].scores.cpu().numpy()
@@ -138,10 +130,6 @@ class DETIC(DetectionBaseModel):
         final_pred_boxes = []
         final_pred_classes = []
         final_pred_scores = []
-
-        # get class labels
-
-        print(predictions)
 
         for i, pred_class in enumerate(pred_classes):
             if labels[pred_class] in labels:
