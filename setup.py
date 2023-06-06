@@ -2,7 +2,7 @@ import setuptools
 from setuptools import find_packages
 import re
 
-with open("./src/__init__.py", 'r') as f:
+with open("./autodistill_detic/__init__.py", 'r') as f:
     content = f.read()
     # from https://www.py4u.net/discuss/139845
     version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', content).group(1)
@@ -11,16 +11,18 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="template-python-zuppif#1",  
+    name="autodistill_detic",
     version=version,
-    author="zuppif",
-    author_email="francesco.zuppichini@gmail.com",
-    description="<INSERT_DESCRIPTION>",
+    author="Roboflow",
+    author_email="support@roboflow.com",
+    description="DETIC module for use with Autodistill",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    install_requires=[
-      # list your requires
+    url="https://github.com/autodistill/autodistill-detic",
+    nstall_requires=[
+        "torch",
+        "supervision",
+        "numpy",
     ],
     packages=find_packages(exclude=("tests",)),
     extras_require={
