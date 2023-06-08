@@ -43,6 +43,7 @@ setuptools.setup(
         "torch",
         "supervision",
         "numpy",
+        "autodistill",
     ],
     cmdclass={
         'install': AutodistillDetic,
