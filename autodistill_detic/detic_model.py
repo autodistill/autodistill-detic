@@ -1,10 +1,8 @@
 import os
 from dataclasses import dataclass
-
 import numpy as np
 import supervision as sv
 import torch
-import subprocess
 from autodistill.detection import CaptionOntology, DetectionBaseModel
 
 import argparse
@@ -68,41 +66,12 @@ def load_detic_model(ontology):
 HOME = os.path.expanduser("~")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-installation_commands = [
-    "mkdir ~/.cache/autodistill/",
-    "cd ~/.cache/autodistill/",
-    "git clone git@github.com:facebookresearch/detectron2.git",
-    "cd detectron2",
-    "pip install -e .",
-    "pip install -r requirements.txt",
-    "cd ..",
-    "git clone https://github.com/facebookresearch/Detic.git --recurse-submodules",
-    "cd Detic",
-    "pip install -r requirements.txt",
-    "mkdir models",
-    "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
-]
-
-def install_detic():
-    for command in installation_commands:
-        # keep track of pathi
-        if command.startswith("cd"):
-            # re[place ~ with home]
-            command = command.replace("~", HOME)
-            os.chdir(command.split(" ")[1])
-
-        subprocess.run(command, shell=True)
-
-
 @dataclass
 class DETIC(DetectionBaseModel):
     ontology: CaptionOntology
 
     def __init__(self, ontology: CaptionOntology):
         self.ontology = ontology
-        if not os.path.exists(HOME + "/.cache/autodistill/detectron2"):
-            install_detic()
-
         original_dir = os.getcwd()
 
         sys.path.insert(0, HOME + "/.cache/autodistill/Detic/third_party/CenterNet2/")
