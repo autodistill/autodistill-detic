@@ -6,28 +6,26 @@ import subprocess
 
 with open("./autodistill_detic/__init__.py", 'r') as f:
     content = f.read()
-    # from https://www.py4u.net/discuss/139845
     version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', content).group(1)
-    
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 class AutodistillDetic(install):
     def run(self):
         install.run(self)
-        installation_commands = [
-            "mkdir ~/.cache/autodistill/",
-            "cd ~/.cache/autodistill/",
-            "pip install 'git+https://github.com/facebookresearch/detectron2.git'",
-            "git clone https://github.com/facebookresearch/Detic.git --recurse-submodules",
-            "cd Detic",
-            "pip install -r requirements.txt",
-            "mkdir models",
-            "wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
-        ]
+        installation_commands = """
+            mkdir -p ~/.cache/autodistill/ &&
+            cd ~/.cache/autodistill/ &&
+            pip install 'git+https://github.com/facebookresearch/detectron2.git' &&
+            git clone https://github.com/facebookresearch/Detic.git --recurse-submodules &&
+            cd Detic &&
+            pip install -r requirements.txt &&
+            mkdir models &&
+            wget https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth -O models/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth
+        """
 
-        for command in installation_commands:
-            subprocess.run(command, shell=True)
+        subprocess.run(installation_commands, shell=True, executable="/bin/bash")
 
 
 setuptools.setup(
