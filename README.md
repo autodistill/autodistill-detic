@@ -47,6 +47,13 @@ base_model = DETIC(
 )
 base_model.label("./context_images", extension=".jpg")
 ```
+## Troubleshooting
+
+Make sure you have Detectron2 installed on your environment. If you don't have it, run the following code.
+
+```
+pip install 'git+https://github.com/facebookresearch/detectron2.git'
+```
 
 ## License
 
