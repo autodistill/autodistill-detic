@@ -4,15 +4,12 @@ import numpy as np
 import supervision as sv
 import torch
 from autodistill.detection import CaptionOntology, DetectionBaseModel
-
+import subprocess
 import argparse
 import multiprocessing as mp
 import os
 import sys
 
-from detectron2.config import get_cfg
-from detectron2.data.detection_utils import read_image
-from detectron2.utils.logger import setup_logger
 
 VOCAB = "custom"
 CONFIDENCE_THRESHOLD = 0.3
@@ -66,6 +63,40 @@ def load_detic_model(ontology):
 HOME = os.path.expanduser("~")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def check_dependencies():
+    # Create the ~/.cache/autodistill directory if it doesn't exist
+    autodistill_dir = os.path.expanduser("~/.cache/autodistill")
+    os.makedirs(autodistill_dir, exist_ok=True)
+    
+    os.chdir(autodistill_dir)
+    
+    try:
+        import detectron2
+    except ImportError:
+        subprocess.run(["pip", "install", "git+https://github.com/facebookresearch/detectron2.git"])
+    
+    # Check if Detic is installed
+    detic_path = os.path.join(autodistill_dir, "Detic")
+    if not os.path.isdir(detic_path):
+        subprocess.run(["git", "clone", "https://github.com/facebookresearch/Detic.git", "--recurse-submodules"])
+        
+        os.chdir(detic_path)
+
+        subprocess.run(["pip", "install", "-r", "requirements.txt"])
+        
+        models_dir = os.path.join(detic_path, "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        model_url = "https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
+        model_path = os.path.join(models_dir, "Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth")
+        subprocess.run(["wget", model_url, "-O", model_path])
+
+check_dependencies()
+
+from detectron2.config import get_cfg
+from detectron2.data.detection_utils import read_image
+from detectron2.utils.logger import setup_logger
+
 @dataclass
 class DETIC(DetectionBaseModel):
     ontology: CaptionOntology
@@ -75,7 +106,6 @@ class DETIC(DetectionBaseModel):
         original_dir = os.getcwd()
 
         sys.path.insert(0, HOME + "/.cache/autodistill/Detic/third_party/CenterNet2/")
-
         sys.path.insert(0, HOME + "/.cache/autodistill/Detic/")
         os.chdir(HOME + "/.cache/autodistill/Detic/")
 
