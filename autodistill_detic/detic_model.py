@@ -115,11 +115,13 @@ class DETIC(DetectionBaseModel):
         os.chdir(original_dir)
 
     def predict(self, input: str) -> sv.Detections:
+        img = read_image(input, format="BGR")
+        self.predict_img_bgr(img_bgr=img)
+    
+    def predict_img_bgr(self, img_bgr: np.ndarray) -> sv.Detections:
         labels = self.ontology.prompts()
 
-        img = read_image(input, format="BGR")
-
-        predictions, visualized_output = self.detic_model.run_on_image(img)
+        predictions, visualized_output = self.detic_model.run_on_image(img_bgr)
 
         pred_boxes = predictions["instances"].pred_boxes.tensor.cpu().numpy()
         pred_classes = predictions["instances"].pred_classes.cpu().numpy()
