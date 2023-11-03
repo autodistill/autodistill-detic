@@ -65,6 +65,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def check_dependencies():
     # Create the ~/.cache/autodistill directory if it doesn't exist
+    original_dir = os.getcwd()
     autodistill_dir = os.path.expanduser("~/.cache/autodistill")
     os.makedirs(autodistill_dir, exist_ok=True)
     
@@ -90,6 +91,7 @@ def check_dependencies():
         model_url = "https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
         model_path = os.path.join(models_dir, "Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth")
         subprocess.run(["wget", model_url, "-O", model_path])
+    os.chdir(original_dir)
 
 check_dependencies()
 
