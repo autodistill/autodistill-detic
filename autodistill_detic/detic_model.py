@@ -1,22 +1,26 @@
-import os
-from dataclasses import dataclass
-import numpy as np
-import supervision as sv
-import torch
-from autodistill.detection import CaptionOntology, DetectionBaseModel
-import subprocess
 import argparse
 import multiprocessing as mp
 import os
+import subprocess
 import sys
+from typing import Any
+from dataclasses import dataclass
 
+import numpy as np
+import supervision as sv
+import torch
+
+from autodistill.detection import CaptionOntology, DetectionBaseModel
+from autodistill.helpers import load_image
 
 VOCAB = "custom"
 CONFIDENCE_THRESHOLD = 0.3
 
+
 def setup_cfg(args):
     from centernet.config import add_centernet_config
     from detic.config import add_detic_config
+
     cfg = get_cfg()
     cfg.MODEL.DEVICE = "cpu" if args.cpu else "cuda"
     add_centernet_config(cfg)
@@ -32,6 +36,7 @@ def setup_cfg(args):
         cfg.MODEL.ROI_HEADS.ONE_CLASS_PER_PROPOSAL = False
     cfg.freeze()
     return cfg
+
 
 def load_detic_model(ontology):
     mp.set_start_method("spawn", force=True)
@@ -50,7 +55,6 @@ def load_detic_model(ontology):
     args.webcam = None
     args.video_input = None
     args.custom_vocabulary = ", ".join(ontology.prompts()).rstrip(",")
-    print(args.custom_vocabulary)
     args.pred_all_class = False
     cfg = setup_cfg(args)
 
@@ -60,44 +64,62 @@ def load_detic_model(ontology):
 
     return demo
 
+
 HOME = os.path.expanduser("~")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def check_dependencies():
     # Create the ~/.cache/autodistill directory if it doesn't exist
     original_dir = os.getcwd()
     autodistill_dir = os.path.expanduser("~/.cache/autodistill")
     os.makedirs(autodistill_dir, exist_ok=True)
-    
+
     os.chdir(autodistill_dir)
-    
+
     try:
         import detectron2
-    except ImportError:
-        subprocess.run(["pip", "install", "git+https://github.com/facebookresearch/detectron2.git"])
-    
+    except:
+        subprocess.run(
+            ["pip", "install", "git+https://github.com/facebookresearch/detectron2.git"]
+        )
+
     # Check if Detic is installed
     detic_path = os.path.join(autodistill_dir, "Detic")
+
     if not os.path.isdir(detic_path):
-        subprocess.run(["git", "clone", "https://github.com/facebookresearch/Detic.git", "--recurse-submodules"])
-        
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/facebookresearch/Detic.git",
+                "--recurse-submodules",
+            ]
+        )
+
         os.chdir(detic_path)
 
         subprocess.run(["pip", "install", "-r", "requirements.txt"])
-        
+
         models_dir = os.path.join(detic_path, "models")
+
         os.makedirs(models_dir, exist_ok=True)
 
         model_url = "https://dl.fbaipublicfiles.com/detic/Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
-        model_path = os.path.join(models_dir, "Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth")
+        model_path = os.path.join(
+            models_dir, "Detic_LCOCOI21k_CLIP_SwinB_896b32_4x_ft4x_max-size.pth"
+        )
         subprocess.run(["wget", model_url, "-O", model_path])
+
     os.chdir(original_dir)
+
 
 check_dependencies()
 
 from detectron2.config import get_cfg
-from detectron2.data.detection_utils import read_image
+from detectron2.data.detection_utils import _apply_exif_orientation
 from detectron2.utils.logger import setup_logger
+
 
 @dataclass
 class DETIC(DetectionBaseModel):
@@ -116,12 +138,16 @@ class DETIC(DetectionBaseModel):
         # change back to original directory
         os.chdir(original_dir)
 
-    def predict(self, input: str) -> sv.Detections:
+    def predict(self, input: Any) -> sv.Detections:
         labels = self.ontology.prompts()
 
-        img = read_image(input, format="BGR")
+        img = load_image(input, return_format="PIL")
 
-        predictions, visualized_output = self.detic_model.run_on_image(img)
+        image = _apply_exif_orientation(img)
+
+        image = image.convert("RGB")
+
+        predictions, _ = self.detic_model.run_on_image(np.array(image))
 
         pred_boxes = predictions["instances"].pred_boxes.tensor.cpu().numpy()
         pred_classes = predictions["instances"].pred_classes.cpu().numpy()

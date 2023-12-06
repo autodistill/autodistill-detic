@@ -1,10 +1,11 @@
-import setuptools
-from setuptools import find_packages
-from setuptools.command.install import install
 import re
 import subprocess
 
-with open("./autodistill_detic/__init__.py", 'r') as f:
+import setuptools
+from setuptools import find_packages
+from setuptools.command.install import install
+
+with open("./autodistill_detic/__init__.py", "r") as f:
     content = f.read()
     version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', content).group(1)
 
